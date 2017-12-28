@@ -76,7 +76,7 @@
 #include <xc.h>
 
 
-unsigned char rxdat[3];  // (global var) Gelen RF verisini tutar.
+unsigned char rxdat[5];  // (global var) Gelen RF verisini tutar.
 
 //=============================================================================
 //   RECEIVE_RF_PACKET // 1 bytelik veri alma fonksiyonu.
@@ -96,7 +96,7 @@ void receive_rf_packet(void)
   unsigned char rrp_bytes;
 
   rrp_bytes = 0;
-  while(rrp_bytes < 5) // Gecerli 3 byte veri alincaya kadar dongude kal.
+  while(rrp_bytes < 3) // Gecerli 3 byte veri alincaya kadar dongude kal.
   {
     //-----------------------------------------
     // Baslangic biti icin bekle. Bu bitin periyodu > 330uS

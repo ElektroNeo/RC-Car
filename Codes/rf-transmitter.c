@@ -93,12 +93,12 @@ void main(void) {
         while(ADCON0bits.GO_nDONE);
         ADCON0bits.ADON = 0; //Turn off the conversation
         
-        if(ADRESH > 245) {
+        if(ADRESH > 250) {
             asm("BANKSEL main@data");
             asm("bsf main@data,3");
             asm("bsf main@data,2");
         }
-        else if(ADRESH < 15 ) {
+        else if(ADRESH < 5 ) {
             asm("BANKSEL main@data");
             asm("bcf main@data,3");
             asm("bcf main@data,2");
@@ -118,12 +118,12 @@ void main(void) {
         while(ADCON0bits.GO_nDONE);
         ADCON0bits.ADON = 0; //Turn off the conversation
         
-        if(ADRESH > 180) {
+        if(ADRESH > 200) {
             asm("BANKSEL main@data");
             asm("bcf main@data,1");
             asm("bcf main@data,0");
         }
-        else if(ADRESH < 70) {
+        else if(ADRESH < 50) {
             asm("BANKSEL main@data");
             asm("bsf main@data,1");
             asm("bsf main@data,0");

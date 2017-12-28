@@ -63,7 +63,7 @@ void main(void) {
         distance = ((double)distance / 88);
         
         // Mesafe 2cm ile 15cm arasinda ise cikisa 1 sinyalini gonder.
-        if((distance > 2) && (distance < 15)) {
+        if((distance > 2) && (distance < 20)) {
             GPIObits.GP1 = 1;
         }
         // Degilse cikisa 0 sinyalini gonder.
