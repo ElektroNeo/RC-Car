@@ -1,4 +1,4 @@
-# RC-Car
+# RF Haberleşmesi Kullanılan Kumandalı Araba
 RF haberleşmesi kullanan uzaktan kumandalı araba.
 Bir robotu veya arabayı uzaktan kontrol etmek istiyorsak bunun için alıcı ve vericiden oluşan iki decre kurup 
 bunları haberleştirmemiz gerekmektedir. Burada kullanılan haberleşme türü ise RF (Radio Frequency) haberleşmesidir. Sinyali
