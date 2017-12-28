@@ -96,7 +96,7 @@ void receive_rf_packet(void)
   unsigned char rrp_bytes;
 
   rrp_bytes = 0;
-  while(rrp_bytes < 3) // Gecerli 3 byte veri alincaya kadar dongude kal.
+  while(rrp_bytes < 5) // Gecerli 3 byte veri alincaya kadar dongude kal.
   {
     //-----------------------------------------
     // Baslangic biti icin bekle. Bu bitin periyodu > 330uS
@@ -107,7 +107,7 @@ void receive_rf_packet(void)
       while(PORTCbits.RC4) continue;     // Dusen kenar (\) icin bekle.
       rrp_period = TMR0L;                // Gecen sureyi kaydet.
 
-      if(rrp_period < 165) rrp_bytes = 0;   // Gecerli veri degerini sifirla eger
+      if(rrp_period < 150) rrp_bytes = 0;   // Gecerli veri degerini sifirla eger
                                             // hala gurultu varsa.
       else break;                           // Eger sure >330uS ise donguden cik.
     }
@@ -123,12 +123,13 @@ void receive_rf_packet(void)
       while(PORTCbits.RC4) continue;     // Dusen kenar (\) icin bekle.
       rrp_period = TMR0L;                // Gecen sureyi kaydet.
       
-      if(rrp_period >= 100) break;       // Eger sure >=200uS ise donguden cik.
+      if(rrp_period >= 150) break;       // Eger sure >=300uS ise donguden cik.
                                          // Bu beklenmedik bir sinyaldir.
-      if(rrp_period < 75)                // Eger sure <75uS ise gelen veri 0'dir.
+      if(rrp_period < 100)                // Eger sure <75uS ise gelen veri 0'dir.
           rrp_data &= (unsigned char)254;// 75 = 150uS
-      else                
+      else if(rrp_period < 150)                
           rrp_data |= (unsigned char)1;  // Eger sure >75uS ise gelen veri 1'dir.
+      else break;
       // En son biti aldiktan sonra kaydirma islemini yapmasin.
       if (rrp_bits == 1) {
           rrp_bits--;
@@ -232,6 +233,14 @@ void main(void) {
         if((data & (0b10000000)) && !(data & (0b01000000))) {
             if(PORTAbits.RA5 == 1) {
                 LATAbits.LA1 = 1;
+                // Geri
+                LATCbits.LATC2 = 0;
+                LATCbits.LATC1 = 1;
+                LATEbits.LATE0 = 0;
+                LATDbits.LATD1 = 1;
+                LATBbits.LATB3 = 1;
+                LATBbits.LATB5 = 1;
+                __delay_ms(100);
             }
             else {
                 LATAbits.LA1 = 0;
@@ -280,7 +289,7 @@ void main(void) {
             LATCbits.LATC1 = 0;
             LATEbits.LATE0 = 0;
             LATDbits.LATD1 = 1;
-            LATBbits.LATB3 = 0;
+            LATBbits.LATB3 = 1;
             LATBbits.LATB5 = 0;
         }
         else if ((data & (0b00001111)) == 0b1101) {
@@ -299,7 +308,7 @@ void main(void) {
             LATEbits.LATE0 = 0;
             LATDbits.LATD1 = 0;
             LATBbits.LATB3 = 0;
-            LATBbits.LATB5 = 0;
+            LATBbits.LATB5 = 1;
         }
         else if ((data & (0b00001100)) == 0b1000) {
             // Dur

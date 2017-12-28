@@ -53,11 +53,11 @@ void send_rf_byte(unsigned char txdat)
   // 8 bitlik veri gonderiliyor.
   for(tbit=0; tbit<8; tbit++)
   {
-    __delay_us(19);         // default 0 bit LO period is 20uS
+    __delay_us(50);         // default 0 bit LO period is 50uS
     if((txdat >> 7) & (0b1)) 
-        __delay_us(50);     // increase the LO period if is a 1 bit!
+        __delay_us(100);     // increase the LO period if is a 1 bit!
     PORTCbits.RC5 = 1;
-    __delay_us(79);         // 80uS HI pulse
+    __delay_us(100);         // 100uS HI pulse
     PORTCbits.RC5 = 0;
     txdat = txdat << 1;     // Veri 1 sola kaydiriliyor.
   }
