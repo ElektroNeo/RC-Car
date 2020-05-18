@@ -1,6 +1,11 @@
 # RC Car
 A Remote-controlled car is one of the basic projects in electronics. This project is useful for understanding RF communication and how to control an RC car.
 
+### Car
+![](Images/RC-Car-Project-Car.jpg)
+### Remote Controller
+![](Images/RC-Car-Project-Remote-Board.jpg)
+
 ## Components
 ### Transmitter (Remote Controller)
 - 1x PIC16F877 Microcontroller
@@ -9,6 +14,7 @@ A Remote-controlled car is one of the basic projects in electronics. This projec
 - 1x 10k Potentiometer (Speed)
 - 1x Button (Buzzer)
 - 3x Switch (Power, Obstacle, and Lights)
+- 1x 8MHz Crystal
 - 1x 7805 Voltage Regulator
 - 1x 8.4V 800mA (or which you have) LiPo Battery
 - Others (Resistors, Capacitors, cables...)
