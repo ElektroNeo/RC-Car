@@ -2,9 +2,10 @@
 A Remote-controlled car is one of the basic projects in electronics. This project is useful for understanding RF communication and how to control an RC car.
 
 ### Car
-![](Images/RC-Car-Project-Car.jpg)
+<img src="Images/RC-Car-Project-Car.jpg" width="400">
+
 ### Remote Controller
-![](Images/RC-Car-Project-Remote-Board.jpg)
+<img src="Images/RC-Car-Project-Remote-Board.jpg" width="400">
 
 ## Components
 ### Transmitter (Remote Controller)
