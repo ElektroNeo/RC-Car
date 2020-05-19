@@ -37,3 +37,14 @@ A Remote-controlled car is one of the basic projects in electronics. This projec
 
 ## Communication Range
 About 20m meters.
+
+## Circuit Images
+
+### Transmitter
+<img src="Images/circuit-transmitter.PNG" width="800">
+
+### Obstacle Detector
+<img src="Images/circuit-obstacle-detector.PNG" width="800">
+
+### Receiver
+<img src="Images/circuit-receiver.PNG" width="800">
