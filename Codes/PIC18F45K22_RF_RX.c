@@ -1,11 +1,10 @@
 /*
  * Author: ElektroNEO
  *
- * Created on 07 Aralik 2017 Persembe, 22:44
+ * Created on 07.12.2017, 22:44
  */
 
 // PIC18F45K22 Configuration Bit Settings
-// CONFIG1H - Konfigürasyon ayarları.
 #pragma config FOSC = INTIO67   // Oscillator Selection bits (Internal
                                 // oscillator block)
 #pragma config PLLCFG = OFF     // 4X PLL Enable (Oscillator used directly)
@@ -91,24 +90,24 @@
 // CONFIG7H
 #pragma config EBTRB = OFF
 
-// 8 Mhz dahili osilatör kullanılıyor.
+// 8MHz internal oscillator used.
 #define _XTAL_FREQ 8000000
 #include <xc.h>
 
 
-unsigned char rxdat[5];  // (global var) Gelen RF verisini tutar.
+unsigned char rxdat[5];  // (global variable) Stores received data.
 
 //=======================================================================
-//   RECEIVE_RF_PACKET // 1 bytelik veri alma fonksiyonu.
+//   RECEIVE_RF_PACKET // Read 1 byte data function.
 //=======================================================================
 void receive_rf_packet(void)
 {
   //-------------------------------------------------------
-  // Bu fonksiyon gelen veriyi çozer ve rxdat[] dizisine kaydeder.
-  // Ard arda 5 tane geçerli 1 bytelik bilgi alınmak zorundadır.
-  // Fonksiyon bu 3 bilgiyi alıncaya kadar tekrar eder.
-  // global değişken; unsigned char rxdat[10] 3 bylelik sonucu tutar.
-  // Not: TMR0 500kHz frekansta çalışıyor, bu yüzden 200uS = 100 TMR0 sayacı
+  // This function decodes received data and stores it to rxdat[] array.
+  // 3 valid 1-byte information must be obtained consecutively.
+  // The function repeats until you get these 3 pieces of information.
+  // global variable; unsigned char rxdat[10] stores 3 bytes of data.
+  // Note: TMR0 runs at 500kHz frequency, That is why 200uS = 100 TMR0 counter
   //-------------------------------------------------------
   unsigned char rrp_data;
   unsigned char rrp_period;
@@ -116,100 +115,100 @@ void receive_rf_packet(void)
   unsigned char rrp_bytes;
 
   rrp_bytes = 0;
-  while(rrp_bytes < 3) // Geçerli 3 byte veri alıncaya kadar döngüde kal.
+  while(rrp_bytes < 3) // Loop until you get valid 3 bytes of data.
   {
     //-----------------------------------------
-    // Başlangıç biti için bekle.
+    // Wait for starting bit.
     while(1)
     {
-      TMR0L = 0;                          // Zamanlayıcıyı sıfırla.
-      while(!PORTCbits.RC4) continue;     // Yükselen kenar (/) için bekle.
-      while(PORTCbits.RC4) continue;      // Düşen kenar (\) için bekle.
-      rrp_period = TMR0L;                 // Geçen süreyi kaydet.
+      TMR0L = 0;                          // Reset timer.
+      while(!PORTCbits.RC4) continue;     // Wait for rising edge.
+      while(PORTCbits.RC4) continue;      // Wait for falling edge.
+      rrp_period = TMR0L;                 // Save time.
 
-      if(rrp_period < 150) rrp_bytes = 0; // Geçerli veri değerini sıfırla
-                                          // eğer hala gurultu varsa.
-      else break;                         // Eğer süre >300uS ise döngüden çık.
+      if(rrp_period < 150) rrp_bytes = 0; // Reset current data value
+                                          // if there is still noise.
+      else break;                         // If time is greater than 300uS then, exit the loop.
     }
 
     //-----------------------------------------
-    // Şimdi 8 bitlik veriyi alabiliriz.
+    // Now we can get 8-bit data
     rrp_bits = 8;
-    // rrp_bits 0 oluncaya kadar döngüde kal.
+    // Wait until rrp_bits will be 0.
     while(rrp_bits)
     {
-      TMR0L = 0; // Zamanlayıcıyı sıfırla.
-      while(!PORTCbits.RC4) continue;    // Yükselen kenar (/) için bekle.
-      while(PORTCbits.RC4) continue;     // Düşen kenar (\) için bekle.
-      rrp_period = TMR0L;                // Geçen süreyi kaydet.
+      TMR0L = 0; // Reset timer.
+      while(!PORTCbits.RC4) continue;    // Wait for rising edge.
+      while(PORTCbits.RC4) continue;     // Wait for falling edge.
+      rrp_period = TMR0L;                // Save time.
 
-      if(rrp_period >= 150) break;       // Eğer sure >=300uS ise döngüden çık.
-                                         // Bu beklenmedik bir sinyaldir.
-      if(rrp_period < 100)               // Eger sure <200uS ise gelen veri 0'dir.
+      if(rrp_period >= 150) break;       // If time is greater than 300uS then, exit the loop.
+                                         // This is an unexpected signal.
+      if(rrp_period < 100)               // If time is less than 200uS then, data is 0.
           rrp_data &= (unsigned char)254;// 100 = 200uS
       else if(rrp_period < 150)
-          rrp_data |= (unsigned char)1;  // Eger sure >75uS ise gelen veri 1'dir.
+          rrp_data |= (unsigned char)1;  // If time is less than 75uS then, data is 0.
       else break;
-      // En son biti aldıktan sonra kaydırma işlemini yapmasın.
+      // Do not shift after receiving the last bit.
       if (rrp_bits == 1) {
           rrp_bits--;
           break;
       }
-      rrp_data = (rrp_data << 1);   // Veriyi 1 bit sola kaydır.
-      rrp_bits--;                   // Bir sonraki bit için yer aç.
+      rrp_data = (rrp_data << 1);   // Shift data by 1.
+      rrp_bits--;                   // Make room for the next bit.
     }
 
     //-----------------------------------------
-    if(rrp_bits)      // Hata varsa...
+    if(rrp_bits)      // If an error...
     {
-      rrp_bytes = 0;  // Geçerli byteleri sıfırla ve tekrar
-                      // veriyi almak için başa dön.
+      rrp_bytes = 0;  // Reset the current bytes and return to 
+                      // top to get the data again.
     }
-    else              // Hata yoksa 8 bitlik veriyi diziye kaydet.
+    else              // If there are no errors, save the 8-bit data to the array.
     {
       rxdat[rrp_bytes] = rrp_data;
-      rrp_bytes++;    // Bir sonraki veriyi almaya hazırla.
+      rrp_bytes++;    // Prepare to receive the next data.
     }
   }
 }
 //-----------------------------------------------------------------------------
 
 void main(void) {
-    // Osilatör ayarı.
+    // Oscillator configuration.
     OSCCONbits.IRCF = 6; // 110 - 8 Mhz
-    // RF alıcı girişi.
+    // RF receiver input.
     TRISCbits.TRISC4 = 1;
     ANSELCbits.ANSC4 = 0;
     PORTCbits.RC4 = 0;
 
-    // Korna çıkışı.
+    // Buzzer output.
     TRISAbits.TRISA1 = 0;
     ANSELAbits.ANSA1 = 0;
 
-    // Engel algılayıcı girişi.
+    // Obstacle detector input.
     TRISAbits.TRISA5 = 1;
     ANSELAbits.ANSA5 = 0;
     PORTAbits.RA5 = 0;
 
-    // Ön far cıkışları.
-    // 1. far
+    // Front light outputs.
+    // 1. light
     TRISAbits.TRISA7 = 0;
     PORTAbits.RA7 = 0;
-    // 2. far
+    // 2. light
     TRISCbits.TRISC0 = 0;
     PORTCbits.RC0 = 0;
 
-    // Arka far çıkışları
-    // 1. far
+    // Back light outputs.
+    // 1. light
     TRISBbits.TRISB3 = 0;
     ANSELBbits.ANSB3 = 0;
     PORTBbits.RB3 = 0;
-    // 2. far
+    // 2. light
     TRISBbits.TRISB5 = 0;
     ANSELBbits.ANSB5 = 0;
     PORTBbits.RB5 = 0;
 
-    // Motor kontrol.
+    // Motor control.
     // PWM1
     TRISCbits.RC2 = 0;
     ANSELCbits.ANSC2 = 0;
@@ -227,20 +226,20 @@ void main(void) {
     PORTDbits.RD1 = 0;
 
 
-    T0CONbits.T08BIT = 1;   // TMR0'ı 8 bit olarak ayarla.
+    T0CONbits.T08BIT = 1;   // Set TMR0 to 8 bit.
     T0CONbits.T0CS = 0;
     T0CONbits.PSA = 0;
     T0CONbits.T0PS = 0b001; // Prescaler = 1:4 = 500Khz
     T0CONbits.TMR0ON = 1;
 
-    unsigned char data;     // Verinin kaydedileceği değişken.
+    unsigned char data;     // Data variable.
 
     while(1) {
-        // Veriyi al.
+        // Get data.
         receive_rf_packet();
-        data = rxdat[1]; // Alınan veriyi data değişkenine ata.
+        data = rxdat[1]; // Copy receivet data to data variable.
 
-        // Korna
+        // Buzzer
         if (data & (0b01000000)) {
             LATAbits.LA1 = 1;
         }
@@ -248,11 +247,11 @@ void main(void) {
             LATAbits.LA1 = 0;
         }
 
-        // Engel
+        // Obstacle
         if((data & (0b10000000)) && !(data & (0b01000000))) {
             if(PORTAbits.RA5 == 1) {
                 LATAbits.LA1 = 1;
-                // Geri
+                // Backward
                 LATCbits.LATC2 = 0;
                 LATCbits.LATC1 = 1;
                 LATEbits.LATE0 = 0;
@@ -265,7 +264,7 @@ void main(void) {
                 LATAbits.LA1 = 0;
             }
         }
-        // Ön farlar
+        // Front lights
         if (data & (0b00100000)) {
             LATAbits.LA7 = 1;
             LATCbits.LC0 = 1;
@@ -274,9 +273,9 @@ void main(void) {
             LATAbits.LA7 = 0;
             LATCbits.LC0 = 0;
         }
-        // Motor kntrolü
+        // Motor controle
         if ((data & (0b00001111)) == 0b0000) {
-            // İleri-Sol
+            // Forward-Left
             LATCbits.LATC2 = 0;
             LATCbits.LATC1 = 0;
             LATEbits.LATE0 = 1;
@@ -285,7 +284,7 @@ void main(void) {
             LATBbits.LATB5 = 0;
         }
         else if ((data & (0b00001111)) == 0b0001) {
-            // İleri
+            // Forward
             LATCbits.LATC2 = 1;
             LATCbits.LATC1 = 0;
             LATEbits.LATE0 = 1;
@@ -294,7 +293,7 @@ void main(void) {
             LATBbits.LATB5 = 0;
         }
         else if ((data & (0b00001111)) == 0b0011) {
-            // İleri-Sağ
+            // Forward-Right
             LATCbits.LATC2 = 1;
             LATCbits.LATC1 = 0;
             LATEbits.LATE0 = 0;
@@ -303,7 +302,7 @@ void main(void) {
             LATBbits.LATB5 = 0;
         }
         else if ((data & (0b00001111)) == 0b1100) {
-            // Geri-Sol
+            // Backward-Left
             LATCbits.LATC2 = 0;
             LATCbits.LATC1 = 0;
             LATEbits.LATE0 = 0;
@@ -312,7 +311,7 @@ void main(void) {
             LATBbits.LATB5 = 0;
         }
         else if ((data & (0b00001111)) == 0b1101) {
-            // Geri
+            // Backward
             LATCbits.LATC2 = 0;
             LATCbits.LATC1 = 1;
             LATEbits.LATE0 = 0;
@@ -321,7 +320,7 @@ void main(void) {
             LATBbits.LATB5 = 1;
         }
         else if ((data & (0b00001111)) == 0b1111) {
-            // Geri-Sağ
+            // Backward-Right
             LATCbits.LATC2 = 0;
             LATCbits.LATC1 = 1;
             LATEbits.LATE0 = 0;
@@ -330,7 +329,7 @@ void main(void) {
             LATBbits.LATB5 = 1;
         }
         else if ((data & (0b00001100)) == 0b1000) {
-            // Dur
+            // Stop
             LATCbits.LATC2 = 0;
             LATCbits.LATC1 = 0;
             LATEbits.LATE0 = 0;
@@ -339,5 +338,6 @@ void main(void) {
             LATBbits.LATB5 = 0;
         }
     }
+    
     return;
 }

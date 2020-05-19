@@ -1,7 +1,7 @@
 /*
  * Author: ElektroNEO
  *
- * Created on 16 Kasım 2017 Perşembe, 23:38
+ * Created on 16.12.2017, 23:38
  */
 
 // PIC16F877 Configuration Bit Settings
@@ -21,78 +21,77 @@
                                 // (Unprotected program memory may be written
                                 // to by EECON control)
 
-// 8 Mhz kristal kullanılıyor.
+// 8Mhz external crystal used
 #define _XTAL_FREQ 8000000
 
 #include <xc.h>
 
 //=======================================================================
-//   SEND_RF_BYTE: 1 bytelik veri gonderme fonksiyonu.
+//   SEND_RF_BYTE: Send 1 byte data function.
 //=======================================================================
 void send_rf_byte(unsigned char txdat)
 {
   //-------------------------------------------------------
-  // Bu fonksiyon ile bir verinin herbir bitini teker teker verici
-  // module gonderir.
-  // Zamanlama;
-  //   HIGH pulse uzunlugu; her zaman 100uS
-  //   0 bit, LOW pulse uzunlugu; 50uS (toplam 0 bit pulse periyodu 150uS)
-  //   1 bit, LOW pulse uzunlugu; 150uS (toplam 1 bit pulse periyodu 250uS)
-  //   byteler arası boşluk, LOW pulse uzunluğu; 100uS , HI pulse uzunluğu
-  //   250uS (toplam boşluk periyodu 350uS)
+  // This function sneds every bits in data to receiver module.
+  // Timing;
+  //   HIGH pulse width; always 100uS
+  //   0 bit, LOW pulse width; 50uS (total 0 bit pulse width is 150uS)
+  //   1 bit, LOW pulse width; 150uS (total 1 bit pulse width is 250uS)
+  //   delay between bytes, LOW pulse width; 100uS , HI pulse width
+  //   250uS (total delay period is 350uS)
   //-------------------------------------------------------
   unsigned char tbit;
 
-  // 350 us lik başlangıç biti gönderiliyor.
-  // Alıcı bu biti aldığında veriyi almaya başlar.
+  // Send 300us starting bit.
+  // Receiver starts get data when reads this bit.
   __delay_us(100);      // 100uS LOW
   PORTCbits.RC5 = 1;
   __delay_us(250);     // 250uS HIGH
   PORTCbits.RC5 = 0;
 
-  // 8 bitlik veri gönderiliyor.
+  // Sending 8bit data
   for(tbit=0; tbit<8; tbit++)
   {
-    __delay_us(50);         // varsayılan 0 bit LOW pulse periyodu: 50uS
+    __delay_us(50);         // Default 0 bit LOW pulse width: 50uS
     if((txdat >> 7) & (0b1))
-        __delay_us(100);    // bit değeri 1 ise LOW pulse periyodunu
-                            // 100uS arttır.
+        __delay_us(100);    // If bit is 1 then, increase LOW pulse width 100uS
+
     PORTCbits.RC5 = 1;
-    __delay_us(100);        // HIGH pulse değeri: 100uS
+    __delay_us(100);        // HIGH pulse width: 100uS
     PORTCbits.RC5 = 0;
-    txdat = txdat << 1;     // Veri 1 sola kaydırılıyor.
+    txdat = txdat << 1;     // Data shifts to left
   }
 }
 
 void main(void) {
-    // Giriş - çıkışlar.
-    // Joystik için girişler.
-    TRISAbits.TRISA0 = 1; // A0 giriş.
-    TRISAbits.TRISA1 = 1; // A2 giriş.
-    ADCON1bits.PCFG = 0;  // PORTA analog giriş.
+    // I/Os
+    // Joystick inputs.
+    TRISAbits.TRISA0 = 1; // A0 input.
+    TRISAbits.TRISA1 = 1; // A1 input.
+    ADCON1bits.PCFG = 0;  // PORTA analog input.
     ADCON1bits.ADFM = 0;  // Left justified. 6 Least Significant bits of
                           // ADRESL are read as ?0?.
 
-    // Korna, far ve engel girişi.
-    TRISBbits.TRISB1 = 1; // Korna
-    TRISBbits.TRISB2 = 1; // Far
-    TRISBbits.TRISB4 = 1; // Engel
+    // Buzzer, light and obstacle switch input.
+    TRISBbits.TRISB1 = 1; // Buzzer
+    TRISBbits.TRISB2 = 1; // Light
+    TRISBbits.TRISB4 = 1; // Obstacle
 
-    // Verici çıkışı.
+    // Receiver output.
     TRISCbits.TRISC5 = 0; // RF-RX
     PORTCbits.RC5 = 0;
 
     unsigned char data = 128;
     while(1) {
 
-        // Sağ - Sol ayarı.
+        // Joystick left-right configurations.
         ADCON0bits.CHS = 0b001; // Channel 1
         ADCON0bits.ADCS = 0b01; // Fosc/8
-        ADCON0bits.ADON = 1;    // ADC modülünü aç.
+        ADCON0bits.ADON = 1;    // Turn on ADC module.
         __delay_us(20);
         ADCON0bits.GO_nDONE = 1;
         while(ADCON0bits.GO_nDONE);
-        ADCON0bits.ADON = 0;    // ADC modülünü kapat.
+        ADCON0bits.ADON = 0;    // Turn off ADC module.
 
         if(ADRESH > 250) {
             asm("BANKSEL main@data");
@@ -110,14 +109,14 @@ void main(void) {
             asm("bcf main@data,2");
         }
 
-        // Ileri - Geri ayarı.
+        // Joystick forward-backward configurations.
         ADCON0bits.CHS = 0b000; // Channel 0
         ADCON0bits.ADCS = 0b01; // Fosc/8
-        ADCON0bits.ADON = 1;    // ADC modülünü aç.
+        ADCON0bits.ADON = 1;    // Turn on ADC module.
         __delay_us(20);
         ADCON0bits.GO_nDONE = 1;
         while(ADCON0bits.GO_nDONE);
-        ADCON0bits.ADON = 0;    // ADC modülünü kapat.
+        ADCON0bits.ADON = 0;    // Turn off ADC module.
 
         if(ADRESH > 200) {
             asm("BANKSEL main@data");
@@ -135,7 +134,7 @@ void main(void) {
             asm("bsf main@data,0");
         }
 
-        // Korna
+        // Buzzer
         if(PORTBbits.RB1 == 1) {
             asm("BANKSEL main@data");
             asm("bcf main@data,6");
@@ -144,7 +143,7 @@ void main(void) {
             asm("BANKSEL main@data");
             asm("bsf main@data,6");
         }
-        // Ön farlar
+        // Front lights
         if(PORTBbits.RB2 == 1) {
             asm("BANKSEL main@data");
             asm("bsf main@data,5");
@@ -154,7 +153,7 @@ void main(void) {
             asm("bcf main@data,5");
         }
 
-        // Engel
+        // Obstacle
         if(PORTBbits.RB4 == 1) {
             asm("BANKSEL main@data");
             asm("bsf main@data,7");
@@ -164,7 +163,7 @@ void main(void) {
             asm("bcf main@data,7");
         }
 
-        // 1 bytelik veri gönderilir.
+        // Sends 1 byte data.
         send_rf_byte(data);
     }
 }
